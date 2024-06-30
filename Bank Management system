@@ -1,0 +1,269 @@
+import java.io.*;
+import java.util.Scanner;
+
+class Account implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private int accountNo;
+    private String accountHolderName;
+    private char type;
+    private int depositAmount;
+
+    public void openAccount() {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("\nPlease! Enter The account No. : ");
+        accountNo = sc.nextInt();
+        sc.nextLine();
+        System.out.print("\nPlease! Enter The Name of The account Holder : ");
+        accountHolderName = sc.nextLine();
+        System.out.print("\nPlease! Enter Type of The account (C/S) : ");
+        type = sc.next().charAt(0);
+        type = Character.toUpperCase(type);
+        System.out.print("\nPlease! Enter The Initial amount(>=440 for Saving and >=1000 for current) : ");
+        depositAmount = sc.nextInt();
+        System.out.println("\n\nAccount Created..");
+    }
+
+    public void displayAccount() {
+        System.out.println("\nAccount No. : " + accountNo);
+        System.out.println("Account Holder Name : " + accountHolderName);
+        System.out.println("Type of Account : " + type);
+        System.out.println("Balance amount : " + depositAmount);
+    }
+
+    public void updateAccount() {
+        Scanner sc = new Scanner(System.in);
+        System.out.print("\nUpdate Account Holder Name : ");
+        sc.nextLine();
+        accountHolderName = sc.nextLine();
+        System.out.print("\nUpdate Type of Account : ");
+        type = sc.next().charAt(0);
+        type = Character.toUpperCase(type);
+        System.out.print("\nUpdate Balance amount : ");
+        depositAmount = sc.nextInt();
+    }
+
+    public void deposit(int amount) {
+        depositAmount += amount;
+    }
+
+    public void withdraw(int amount) {
+        depositAmount -= amount;
+    }
+
+    public void report() {
+        System.out.printf("%-10d %-20s %-5c %d\n", accountNo, accountHolderName, type, depositAmount);
+    }
+
+    public int getAccountNo() {
+        return accountNo;
+    }
+
+    public int getDepositAmount() {
+        return depositAmount;
+    }
+
+    public char getType() {
+        return type;
+    }
+}
+
+public class BankManagementSystem {
+
+    public static void main(String[] args) {
+        char ch;
+        int num;
+        intro();
+        do {
+            Scanner sc = new Scanner(System.in);
+            System.out.println("\n\n\t\tMAIN MENU");
+            System.out.println("\t\t01. NEW ACCOUNT");
+            System.out.println("\t\t02. DEPOSIT AMOUNT");
+            System.out.println("\t\t03. WITHDRAW AMOUNT");
+            System.out.println("\t\t04. BALANCE ENQUIRY");
+            System.out.println("\t\t05. ALL ACCOUNT HOLDER LIST");
+            System.out.println("\t\t06. CLOSE AN ACCOUNT");
+            System.out.println("\t\t07. UPDATE AN ACCOUNT");
+            System.out.println("\t\t08. EXIT");
+            System.out.print("\t\tSelect Your Option (1-8): ");
+            ch = sc.next().charAt(0);
+            switch (ch) {
+                case '1':
+                    writeAccount();
+                    break;
+                case '2':
+                    System.out.print("\n\t\tPlease! Enter The account No. : ");
+                    num = sc.nextInt();
+                    depositWithdraw(num, 1);
+                    break;
+                case '3':
+                    System.out.print("\n\t\tPlease! Enter The account No. : ");
+                    num = sc.nextInt();
+                    depositWithdraw(num, 2);
+                    break;
+                case '4':
+                    System.out.print("\n\t\tPlease! Enter The account No. : ");
+                    num = sc.nextInt();
+                    displayAccount(num);
+                    break;
+                case '5':
+                    displayAll();
+                    break;
+                case '6':
+                    System.out.print("\n\t\tPlease! Enter The account No. : ");
+                    num = sc.nextInt();
+                    deleteAccount(num);
+                    break;
+                case '7':
+                    System.out.print("\n\t\tPlease! Enter The account No. : ");
+                    num = sc.nextInt();
+                    updateAccount(num);
+                    break;
+                case '8':
+                    System.out.println("\n\t\tThanks for using bank management system");
+                    break;
+                default:
+                    System.out.println("\a");
+                    break;
+            }
+        } while (ch != '8');
+    }
+
+    public static void intro() {
+        System.out.println("\n\n\t\tBANK MANAGEMENT SYSTEM");
+    }
+
+    public static void writeAccount() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("account.dat", true))) {
+            Account ac = new Account();
+            ac.openAccount();
+            out.writeObject(ac);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void displayAccount(int n) {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("account.dat"))) {
+            boolean found = false;
+            while (true) {
+                Account ac = (Account) in.readObject();
+                if (ac.getAccountNo() == n) {
+                    ac.displayAccount();
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                System.out.println("\nAccount number does not exist");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("File could not be open or account does not exist!! Press any Key...");
+        }
+    }
+
+    public static void updateAccount(int n) {
+        File tempFile = new File("Temp.dat");
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("account.dat"));
+             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tempFile))) {
+            boolean found = false;
+            while (true) {
+                Account ac = (Account) in.readObject();
+                if (ac.getAccountNo() == n) {
+                    ac.displayAccount();
+                    System.out.println("\nPlease! Enter The New Details of account");
+                    ac.updateAccount();
+                    found = true;
+                }
+                out.writeObject(ac);
+            }
+            if (!found) {
+                System.out.println("\nRecord Not Found");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("File could not be open or account does not exist!! Press any Key...");
+        }
+        new File("account.dat").delete();
+        tempFile.renameTo(new File("account.dat"));
+        System.out.println("\n\t\tRecord Updated");
+    }
+
+    public static void deleteAccount(int n) {
+        File tempFile = new File("Temp.dat");
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("account.dat"));
+             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tempFile))) {
+            boolean found = false;
+            while (true) {
+                Account ac = (Account) in.readObject();
+                if (ac.getAccountNo() != n) {
+                    out.writeObject(ac);
+                } else {
+                    found = true;
+                }
+            }
+            if (!found) {
+                System.out.println("\nRecord Not Found");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            // Do nothing
+        }
+        new File("account.dat").delete();
+        tempFile.renameTo(new File("account.dat"));
+        System.out.println("\n\t\tRecord Deleted ..");
+    }
+
+    public static void displayAll() {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("account.dat"))) {
+            System.out.println("\n\t\t\t\tACCOUNT HOLDER LIST\n");
+            System.out.println("***");
+            System.out.println("A/c no.      NAME           Type  Balance");
+            System.out.println("***");
+            while (true) {
+                Account ac = (Account) in.readObject();
+                ac.report();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("File could not be open !! Press any Key...");
+        }
+    }
+
+    public static void depositWithdraw(int n, int option) {
+        File tempFile = new File("Temp.dat");
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("account.dat"));
+             ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(tempFile))) {
+            boolean found = false;
+            while (true) {
+                Account ac = (Account) in.readObject();
+                if (ac.getAccountNo() == n) {
+                    ac.displayAccount();
+                    Scanner sc = new Scanner(System.in);
+                    if (option == 1) {
+                        System.out.print("\n\t\tTO DEPOSIT AMOUNT ");
+                        System.out.print("\nPlease! Enter The amount to be deposited: ");
+                        int amount = sc.nextInt();
+                        ac.deposit(amount);
+                    } else if (option == 2) {
+                        System.out.print("\n\t\tTO WITHDRAW AMOUNT ");
+                        System.out.print("\nPlease! Enter The amount to be withdrawn: ");
+                        int amount = sc.nextInt();
+                        int bal = ac.getDepositAmount() - amount;
+                        if ((bal < 440 && ac.getType() == 'S') || (bal < 1000 && ac.getType() == 'C')) {
+                            System.out.println("Insufficient balance");
+                        } else {
+                            ac.withdraw(amount);
+                        }
+                    }
+                    found = true;
+                }
+                out.writeObject(ac);
+            }
+            if (!found) {
+                System.out.println("\nRecord Not Found");
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("File could not be open or account does not exist!! Press any Key...");
+        }
+        new File("account.dat").delete();
+        tempFile.renameTo(new File("account.dat"));
+        System.out.println("\n\t\tRecord Updated");
+    }
+}
